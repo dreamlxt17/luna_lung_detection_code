@@ -17,9 +17,9 @@ def normalize_probability(index, conv_out):
     normed_pro = [(p-min)/(max-min) for p in pro]
     return normed_pro
 
-m=4  # conv
-n=19 # pool
-threshold = 0.495
+m=6  # conv
+n=12 # pool
+threshold = 0.5
 
 def conv_pool(path):
     # data = np.load('/home/didia/didia/1.3.6.1.4.1.14519.5.2.1.6279.6001.100225287222365663678666836860.npy')
@@ -39,29 +39,28 @@ def conv_pool(path):
 
     gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.3)
     with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
-        time2 = time()
-        print 'start',time2 - time1
+        # time2 = time()
+        # print 'start',time2 - time1
 
 
         tf.global_variables_initializer().run()
         conv_out, pool_out = sess.run([conv_out, pool_out], feed_dict={input: pred_tensor})
         conv_out = np.reshape(conv_out, [-1,512,512])
         pool_out= np.reshape(pool_out, [-1,512,512])
-        time3 = time()
-        print 'conv',time3 - time1
+        # time3 = time()
+        # print 'conv',time3 - time1
 
         pool_out[pool_out<threshold] = -1
         coord_list = conv_out==pool_out
         candidates = np.argwhere(coord_list==True)
 
         # candidates= np.array([list(ind) for ind in index if conv_out[ind[0], ind[1], ind[2]]>threshold])
-        # print len(index), len(candidates)
+        print len(candidates)
         # print candidates
 
         candidates = np.transpose(np.stack([candidates[:,1], candidates[:,2], candidates[:,0]]), [1,0])
-        time3 = time()
-        print 'cand',time3 - time1
-        # print candidates
+        # time3 = time()
+        # print 'cand',time3 - time1
 
         patname = path.split('/')[-1]
         fun = voxel_2_world
@@ -71,13 +70,10 @@ def conv_pool(path):
         # world_candids = [[patname, fun(ind, origin, spacing), normed_pro[i]] for i,ind in enumerate(candidates)]
         # print world_candids
 
+        # time3 = time()
+        # print time3 - time1
 
-        # np.save(path.replace('tensor', 'candi_voxel_coord'), candidates)     # 保存voxel坐标 及概率
-        # np.save(path.replace('tensor', 'candi_world_coord'), world_candids)    # 保存world坐标 及概率
-        time3 = time()
-        print time3 - time1
-
-        fname = '/home/didia/didia/luna16/result/submission_0_495_4_16.csv'
+        # fname = '/home/didia/didia/luna16/result/submission_0_5_8_8.csv'
         with open(fname,'a') as f:
             for array in world_candids[1:]:
                 # print array
@@ -93,20 +89,32 @@ def conv_pool(path):
                 f.write(',')
                 f.write(str(prob))
                 f.write('\n')
-        # raw_input('end')
-        time3 = time()
-        print time3 - time1
-
+        # time3 = time()
+        # print time3 - time1
 
 
 path_list = glob.glob('/home/didia/didia/luna16/result/tensor/*')
 path_list.sort()
 
+fname = '/home/didia/didia/luna16/result/5_16_05/submission_5_16_05.csv'
+import os
+dir_name = '/'.join(fname.split('/')[:-1])
+if not os.path.exists(dir_name):
+    os.makedirs(dir_name)
+
 if __name__ == '__main__':
 
-    fname = '/home/didia/didia/luna16/result/submission_0_495_4_16.csv'
     with open(fname, 'w') as f:
-        f.write('')
+        f.write('seriesuid')
+        f.write(',')
+        f.write('coordX')
+        f.write(',')
+        f.write('coordY')
+        f.write(',')
+        f.write('coordZ')
+        f.write(',')
+        f.write('probability')
+        f.write('\n')
     for i, path in enumerate(path_list):
         print i
         conv_pool(path)
