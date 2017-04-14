@@ -1,5 +1,7 @@
 from __future__ import division
 import numpy as np
+from scipy.ndimage import gaussian_filter
+
 
 def weight_by_class_balance(truth, classes=None):
     """
@@ -17,11 +19,23 @@ def weight_by_class_balance(truth, classes=None):
     for c in classes:
         class_mask = np.where(truth==c,1,0)
         class_weight = 1/((np.sum(class_mask)+1e-8)/total_amount)
-
         weight_map += (class_mask*class_weight)#/total_amount
 
-    return weight_map
+    filter_map = gaussian_filter(weight_map, sigma=0.8)
+
+    weight_map1 = np.zeros_like(truth, dtype=np.float32)
+    for c in classes:
+        class_mask = np.where(truth==c,1,0)
+        class_weight = class_mask*filter_map
+        const = total_amount/np.sum(class_weight)
+        weight_map1 += class_weight*const
+
+    return weight_map1
 
 if __name__ == "__main__":
     x = np.array([[1,0,0], [-1, 1, 0]])
-    print weight_by_class_balance(x, [0,1])
+    y = np.zeros([6,6])
+    y[1:5,1:4] = 1
+
+    z = weight_by_class_balance(y, [0,1])
+    print np.sum(z[1:5, 1:4])
